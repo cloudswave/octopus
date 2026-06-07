@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/bestruirui/octopus/internal/helper"
 	"github.com/bestruirui/octopus/internal/model"
 	"github.com/bestruirui/octopus/internal/op"
 	"github.com/bestruirui/octopus/internal/price"
@@ -45,6 +46,10 @@ func init() {
 		AddRoute(
 			router.NewRoute("/last-update-time", http.MethodGet).
 				Handle(getLastUpdateTime),
+		).
+		AddRoute(
+			router.NewRoute("/test", http.MethodPost).
+				Handle(testModel),
 		)
 	router.NewGroupRouter("/v1").
 		Use(middleware.APIKeyAuth()).
@@ -183,4 +188,19 @@ func updateLLMPrice(c *gin.Context) {
 func getLastUpdateTime(c *gin.Context) {
 	time := price.GetLastUpdateTime()
 	resp.Success(c, time)
+}
+
+func testModel(c *gin.Context) {
+	var req helper.TestModelRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		resp.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	result, err := helper.TestModel(c.Request.Context(), req)
+	if err != nil {
+		resp.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resp.Success(c, result)
 }

@@ -9,30 +9,47 @@ import {
     Activity,
     TrendingUp,
     Globe,
-    Key
+    Key,
+    FlaskConical,
+    Loader2
 } from 'lucide-react';
 import { useUpdateChannel, useDeleteChannel, type Channel, type UpdateChannelRequest } from '@/api/endpoints/channel';
+import { useTestModel, type TestModelResponse } from '@/api/endpoints/model';
 import {
     MorphingDialogTitle,
     MorphingDialogDescription,
     MorphingDialogClose,
     useMorphingDialog,
 } from '@/components/ui/morphing-dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from '@/components/ui/dialog';
 import { Tabs, TabsContents, TabsContent } from '@/components/animate-ui/primitives/animate/tabs';
 import { type StatsMetricsFormatted } from '@/api/endpoints/stats';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ChannelForm, type ChannelFormData } from './Form';
 import { formatMoney } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { toast } from '@/components/common/Toast';
 
 export function CardContent({ channel, stats }: { channel: Channel; stats: StatsMetricsFormatted }) {
     const { setIsOpen } = useMorphingDialog();
     const updateChannel = useUpdateChannel();
     const deleteChannel = useDeleteChannel();
+    const testModel = useTestModel();
     const [isEditing, setIsEditing] = useState(false);
     const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+    const [isTestOpen, setIsTestOpen] = useState(false);
+    const [testModelName, setTestModelName] = useState('');
+    const [testPrompt, setTestPrompt] = useState('Hello!');
+    const [testResult, setTestResult] = useState<TestModelResponse | null>(null);
     const [formData, setFormData] = useState<ChannelFormData>({
         name: channel.name,
         type: channel.type,
@@ -160,6 +177,40 @@ export function CardContent({ channel, stats }: { channel: Channel; stats: Stats
         setTimeout(() => {
             deleteChannel.mutate(channel.id);
         }, 300);
+    };
+
+    const handleTestClick = () => {
+        setTestResult(null);
+        setTestModelName(channel.model.split(',')[0]?.trim() || '');
+        setIsTestOpen(true);
+    };
+
+    const handleRunTest = () => {
+        if (!testModelName.trim()) {
+            toast.error(t('test.modelRequired'));
+            return;
+        }
+        testModel.mutate(
+            {
+                channel_id: channel.id,
+                model: testModelName.trim(),
+                prompt: testPrompt.trim() || undefined,
+            },
+            {
+                onSuccess: (data) => {
+                    setTestResult(data);
+                },
+                onError: (error) => {
+                    setTestResult({
+                        success: false,
+                        response: '',
+                        latency_ms: 0,
+                        model: testModelName.trim(),
+                        error: error.message,
+                    });
+                },
+            }
+        );
     };
 
     return (
@@ -422,7 +473,15 @@ export function CardContent({ channel, stats }: { channel: Channel; stats: Stats
                             </div>
 
                             {/* 操作按钮 */}
-                            <div className="grid gap-3 sm:grid-cols-2 pt-2">
+                            <div className="grid gap-3 sm:grid-cols-3 pt-2">
+                                <Button
+                                    onClick={handleTestClick}
+                                    variant="outline"
+                                    className="w-full rounded-2xl h-12"
+                                >
+                                    <FlaskConical className="size-4" />
+                                    {t('actions.test')}
+                                </Button>
                                 <Button
                                     onClick={() => (isConfirmingDelete ? setIsConfirmingDelete(false) : setIsEditing(true))}
                                     variant={isConfirmingDelete ? 'secondary' : 'default'}
@@ -462,6 +521,90 @@ export function CardContent({ channel, stats }: { channel: Channel; stats: Stats
                     </TabsContents>
                 </Tabs>
             </MorphingDialogDescription>
+
+            {/* 模型测试对话框 */}
+            <Dialog open={isTestOpen} onOpenChange={setIsTestOpen}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>{t('test.title')}</DialogTitle>
+                        <DialogDescription>{t('test.description')}</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">{t('test.model')}</label>
+                            <Input
+                                value={testModelName}
+                                onChange={(e) => setTestModelName(e.target.value)}
+                                placeholder={t('test.modelPlaceholder')}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">{t('test.prompt')}</label>
+                            <Input
+                                value={testPrompt}
+                                onChange={(e) => setTestPrompt(e.target.value)}
+                                placeholder={t('test.promptPlaceholder')}
+                            />
+                        </div>
+                        <Button
+                            onClick={handleRunTest}
+                            disabled={testModel.isPending || !testModelName.trim()}
+                            className="w-full"
+                        >
+                            {testModel.isPending ? (
+                                <>
+                                    <Loader2 className="size-4 animate-spin" />
+                                    {t('test.testing')}
+                                </>
+                            ) : (
+                                t('test.run')
+                            )}
+                        </Button>
+                        {testResult && (
+                            <div className={cn(
+                                "rounded-2xl border p-4 space-y-2",
+                                testResult.success
+                                    ? "bg-green-500/10 border-green-500/20"
+                                    : "bg-red-500/10 border-red-500/20"
+                            )}>
+                                <div className="flex items-center gap-2">
+                                    {testResult.success ? (
+                                        <CheckCircle2 className="size-4 text-green-500" />
+                                    ) : (
+                                        <XCircle className="size-4 text-red-500" />
+                                    )}
+                                    <span className={cn(
+                                        "font-medium",
+                                        testResult.success ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"
+                                    )}>
+                                        {testResult.success ? t('test.success') : t('test.failed')}
+                                    </span>
+                                </div>
+                                {testResult.success && testResult.response && (
+                                    <div className="text-sm">
+                                        <span className="text-muted-foreground">{t('test.response')}: </span>
+                                        <span className="text-card-foreground">{testResult.response}</span>
+                                    </div>
+                                )}
+                                <div className="flex gap-4 text-xs text-muted-foreground">
+                                    <span>{t('test.latency')}: {testResult.latency_ms}ms</span>
+                                    {testResult.usage && (
+                                        <>
+                                            <span>{t('test.inputTokens')}: {testResult.usage.input_tokens}</span>
+                                            <span>{t('test.outputTokens')}: {testResult.usage.output_tokens}</span>
+                                        </>
+                                    )}
+                                </div>
+                                {testResult.error && (
+                                    <div className="text-sm text-red-600 dark:text-red-400">
+                                        {testResult.error}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

@@ -490,7 +490,25 @@
                 "saving": "Saving...",
                 "delete": "Delete",
                 "confirmDelete": "Confirm Delete",
-                "deleting": "Deleting..."
+                "deleting": "Deleting...",
+                "test": "Test"
+            },
+            "test": {
+                "title": "Test Model",
+                "description": "Test if the model works through this channel",
+                "model": "Model Name",
+                "modelPlaceholder": "Enter model name",
+                "prompt": "Test Prompt",
+                "promptPlaceholder": "Enter test content",
+                "run": "Start Test",
+                "testing": "Testing...",
+                "success": "Test Passed",
+                "failed": "Test Failed",
+                "response": "Response",
+                "latency": "Latency",
+                "inputTokens": "Input Tokens",
+                "outputTokens": "Output Tokens",
+                "modelRequired": "Please enter a model name"
             }
         },
         "create": {

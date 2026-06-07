@@ -203,3 +203,47 @@ export function useLastUpdateTime() {
         refetchInterval: 30000,
     });
 }
+
+/**
+ * 模型测试请求
+ */
+export interface TestModelRequest {
+    channel_id?: number;
+    model: string;
+    prompt?: string;
+}
+
+/**
+ * 模型测试响应
+ */
+export interface TestModelResponse {
+    success: boolean;
+    response: string;
+    latency_ms: number;
+    model: string;
+    usage?: {
+        input_tokens: number;
+        output_tokens: number;
+    };
+    error?: string;
+}
+
+/**
+ * 测试模型 Hook
+ * 
+ * @example
+ * const testModel = useTestModel();
+ * 
+ * testModel.mutate({
+ *   model: 'gpt-4o',
+ *   channel_id: 1,
+ *   prompt: 'Hello!'
+ * });
+ */
+export function useTestModel() {
+    return useMutation({
+        mutationFn: async (data: TestModelRequest) => {
+            return apiClient.post<TestModelResponse>('/api/v1/model/test', data);
+        },
+    });
+}

@@ -490,7 +490,25 @@
                 "saving": "保存中...",
                 "delete": "删除",
                 "confirmDelete": "确认删除",
-                "deleting": "删除中..."
+                "deleting": "删除中...",
+                "test": "测试"
+            },
+            "test": {
+                "title": "测试模型",
+                "description": "测试当前渠道的模型是否可用",
+                "model": "模型名称",
+                "modelPlaceholder": "输入模型名称",
+                "prompt": "测试提示词",
+                "promptPlaceholder": "输入测试内容",
+                "run": "开始测试",
+                "testing": "测试中...",
+                "success": "测试成功",
+                "failed": "测试失败",
+                "response": "响应内容",
+                "latency": "延迟",
+                "inputTokens": "输入 Token",
+                "outputTokens": "输出 Token",
+                "modelRequired": "请输入模型名称"
             }
         },
         "create": {
