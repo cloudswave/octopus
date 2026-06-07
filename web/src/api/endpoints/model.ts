@@ -247,3 +247,52 @@ export function useTestModel() {
         },
     });
 }
+
+/**
+ * 测试渠道所有模型请求
+ */
+export interface TestChannelRequest {
+    channel_id: number;
+    prompt?: string;
+}
+
+/**
+ * 单个模型测试结果
+ */
+export interface ModelTestResult {
+    model: string;
+    success: boolean;
+    response?: string;
+    latency_ms: number;
+    usage?: {
+        input_tokens: number;
+        output_tokens: number;
+    };
+    error?: string;
+}
+
+/**
+ * 渠道测试响应
+ */
+export interface TestChannelResponse {
+    results: ModelTestResult[];
+}
+
+/**
+ * 测试渠道所有模型 Hook
+ * 
+ * @example
+ * const testChannel = useTestChannel();
+ * 
+ * testChannel.mutate({
+ *   channel_id: 1,
+ *   prompt: 'Hello!'
+ * });
+ */
+export function useTestChannel() {
+    return useMutation({
+        mutationFn: async (data: TestChannelRequest) => {
+            return apiClient.post<TestChannelResponse>('/api/v1/model/test-channel', data);
+        },
+    });
+}

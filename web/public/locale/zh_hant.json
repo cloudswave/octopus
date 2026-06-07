@@ -494,21 +494,16 @@
                 "test": "測試"
             },
             "test": {
-                "title": "測試模型",
-                "description": "測試當前供應源的模型是否可用",
-                "model": "模型名稱",
-                "modelPlaceholder": "輸入模型名稱",
+                "title": "測試供應源模型",
+                "description": "自動測試當前供應源所有模型的可用性",
                 "prompt": "測試提示詞",
                 "promptPlaceholder": "輸入測試內容",
                 "run": "開始測試",
                 "testing": "測試中...",
-                "success": "測試成功",
-                "failed": "測試失敗",
-                "response": "回應內容",
-                "latency": "延遲",
-                "inputTokens": "輸入 Token",
-                "outputTokens": "輸出 Token",
-                "modelRequired": "請輸入模型名稱"
+                "results": "測試結果",
+                "successCount": "可用",
+                "inputTokens": "輸入",
+                "outputTokens": "輸出"
             }
         },
         "create": {

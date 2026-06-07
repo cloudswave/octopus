@@ -50,6 +50,10 @@ func init() {
 		AddRoute(
 			router.NewRoute("/test", http.MethodPost).
 				Handle(testModel),
+		).
+		AddRoute(
+			router.NewRoute("/test-channel", http.MethodPost).
+				Handle(testChannel),
 		)
 	router.NewGroupRouter("/v1").
 		Use(middleware.APIKeyAuth()).
@@ -198,6 +202,21 @@ func testModel(c *gin.Context) {
 	}
 
 	result, err := helper.TestModel(c.Request.Context(), req)
+	if err != nil {
+		resp.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resp.Success(c, result)
+}
+
+func testChannel(c *gin.Context) {
+	var req helper.TestChannelRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		resp.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	result, err := helper.TestChannel(c.Request.Context(), req)
 	if err != nil {
 		resp.Error(c, http.StatusInternalServerError, err.Error())
 		return

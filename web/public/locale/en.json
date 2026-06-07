@@ -494,21 +494,16 @@
                 "test": "Test"
             },
             "test": {
-                "title": "Test Model",
-                "description": "Test if the model works through this channel",
-                "model": "Model Name",
-                "modelPlaceholder": "Enter model name",
+                "title": "Test Channel Models",
+                "description": "Automatically test all models in this channel",
                 "prompt": "Test Prompt",
                 "promptPlaceholder": "Enter test content",
                 "run": "Start Test",
                 "testing": "Testing...",
-                "success": "Test Passed",
-                "failed": "Test Failed",
-                "response": "Response",
-                "latency": "Latency",
-                "inputTokens": "Input Tokens",
-                "outputTokens": "Output Tokens",
-                "modelRequired": "Please enter a model name"
+                "results": "Results",
+                "successCount": "available",
+                "inputTokens": "Input",
+                "outputTokens": "Output"
             }
         },
         "create": {

@@ -14,7 +14,7 @@ import {
     Loader2
 } from 'lucide-react';
 import { useUpdateChannel, useDeleteChannel, type Channel, type UpdateChannelRequest } from '@/api/endpoints/channel';
-import { useTestModel, type TestModelResponse } from '@/api/endpoints/model';
+import { useTestChannel, type ModelTestResult } from '@/api/endpoints/model';
 import {
     MorphingDialogTitle,
     MorphingDialogDescription,
@@ -37,19 +37,17 @@ import { ChannelForm, type ChannelFormData } from './Form';
 import { formatMoney } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { toast } from '@/components/common/Toast';
 
 export function CardContent({ channel, stats }: { channel: Channel; stats: StatsMetricsFormatted }) {
     const { setIsOpen } = useMorphingDialog();
     const updateChannel = useUpdateChannel();
     const deleteChannel = useDeleteChannel();
-    const testModel = useTestModel();
+    const testChannel = useTestChannel();
     const [isEditing, setIsEditing] = useState(false);
     const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
     const [isTestOpen, setIsTestOpen] = useState(false);
-    const [testModelName, setTestModelName] = useState('');
     const [testPrompt, setTestPrompt] = useState('Hello!');
-    const [testResult, setTestResult] = useState<TestModelResponse | null>(null);
+    const [testResults, setTestResults] = useState<ModelTestResult[] | null>(null);
     const [formData, setFormData] = useState<ChannelFormData>({
         name: channel.name,
         type: channel.type,
@@ -180,34 +178,27 @@ export function CardContent({ channel, stats }: { channel: Channel; stats: Stats
     };
 
     const handleTestClick = () => {
-        setTestResult(null);
-        setTestModelName(channel.model.split(',')[0]?.trim() || '');
+        setTestResults(null);
         setIsTestOpen(true);
     };
 
     const handleRunTest = () => {
-        if (!testModelName.trim()) {
-            toast.error(t('test.modelRequired'));
-            return;
-        }
-        testModel.mutate(
+        testChannel.mutate(
             {
                 channel_id: channel.id,
-                model: testModelName.trim(),
                 prompt: testPrompt.trim() || undefined,
             },
             {
                 onSuccess: (data) => {
-                    setTestResult(data);
+                    setTestResults(data.results);
                 },
                 onError: (error) => {
-                    setTestResult({
+                    setTestResults([{
+                        model: '',
                         success: false,
-                        response: '',
                         latency_ms: 0,
-                        model: testModelName.trim(),
                         error: error.message,
-                    });
+                    }]);
                 },
             }
         );
@@ -524,20 +515,12 @@ export function CardContent({ channel, stats }: { channel: Channel; stats: Stats
 
             {/* 模型测试对话框 */}
             <Dialog open={isTestOpen} onOpenChange={setIsTestOpen}>
-                <DialogContent className="sm:max-w-[500px]">
+                <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{t('test.title')}</DialogTitle>
                         <DialogDescription>{t('test.description')}</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">{t('test.model')}</label>
-                            <Input
-                                value={testModelName}
-                                onChange={(e) => setTestModelName(e.target.value)}
-                                placeholder={t('test.modelPlaceholder')}
-                            />
-                        </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium">{t('test.prompt')}</label>
                             <Input
@@ -548,10 +531,10 @@ export function CardContent({ channel, stats }: { channel: Channel; stats: Stats
                         </div>
                         <Button
                             onClick={handleRunTest}
-                            disabled={testModel.isPending || !testModelName.trim()}
+                            disabled={testChannel.isPending}
                             className="w-full"
                         >
-                            {testModel.isPending ? (
+                            {testChannel.isPending ? (
                                 <>
                                     <Loader2 className="size-4 animate-spin" />
                                     {t('test.testing')}
@@ -560,46 +543,53 @@ export function CardContent({ channel, stats }: { channel: Channel; stats: Stats
                                 t('test.run')
                             )}
                         </Button>
-                        {testResult && (
-                            <div className={cn(
-                                "rounded-2xl border p-4 space-y-2",
-                                testResult.success
-                                    ? "bg-green-500/10 border-green-500/20"
-                                    : "bg-red-500/10 border-red-500/20"
-                            )}>
-                                <div className="flex items-center gap-2">
-                                    {testResult.success ? (
-                                        <CheckCircle2 className="size-4 text-green-500" />
-                                    ) : (
-                                        <XCircle className="size-4 text-red-500" />
-                                    )}
-                                    <span className={cn(
-                                        "font-medium",
-                                        testResult.success ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"
-                                    )}>
-                                        {testResult.success ? t('test.success') : t('test.failed')}
-                                    </span>
+                        {testResults && testResults.length > 0 && (
+                            <div className="space-y-2">
+                                <div className="text-sm font-medium text-muted-foreground">
+                                    {t('test.results')} ({testResults.filter(r => r.success).length}/{testResults.length} {t('test.successCount')})
                                 </div>
-                                {testResult.success && testResult.response && (
-                                    <div className="text-sm">
-                                        <span className="text-muted-foreground">{t('test.response')}: </span>
-                                        <span className="text-card-foreground">{testResult.response}</span>
-                                    </div>
-                                )}
-                                <div className="flex gap-4 text-xs text-muted-foreground">
-                                    <span>{t('test.latency')}: {testResult.latency_ms}ms</span>
-                                    {testResult.usage && (
-                                        <>
-                                            <span>{t('test.inputTokens')}: {testResult.usage.input_tokens}</span>
-                                            <span>{t('test.outputTokens')}: {testResult.usage.output_tokens}</span>
-                                        </>
-                                    )}
+                                <div className="space-y-2">
+                                    {testResults.map((result, index) => (
+                                        <div
+                                            key={index}
+                                            className={cn(
+                                                "rounded-xl border p-3 space-y-1",
+                                                result.success
+                                                    ? "bg-green-500/5 border-green-500/20"
+                                                    : "bg-red-500/5 border-red-500/20"
+                                            )}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    {result.success ? (
+                                                        <CheckCircle2 className="size-3.5 text-green-500" />
+                                                    ) : (
+                                                        <XCircle className="size-3.5 text-red-500" />
+                                                    )}
+                                                    <span className="font-mono text-sm">{result.model || 'Unknown'}</span>
+                                                </div>
+                                                <span className="text-xs text-muted-foreground">
+                                                    {result.latency_ms}ms
+                                                </span>
+                                            </div>
+                                            {result.success && result.response && (
+                                                <div className="text-xs text-muted-foreground truncate">
+                                                    {result.response}
+                                                </div>
+                                            )}
+                                            {result.usage && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    {t('test.inputTokens')}: {result.usage.input_tokens} / {t('test.outputTokens')}: {result.usage.output_tokens}
+                                                </div>
+                                            )}
+                                            {result.error && (
+                                                <div className="text-xs text-red-600 dark:text-red-400 truncate">
+                                                    {result.error}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
-                                {testResult.error && (
-                                    <div className="text-sm text-red-600 dark:text-red-400">
-                                        {testResult.error}
-                                    </div>
-                                )}
                             </div>
                         )}
                     </div>

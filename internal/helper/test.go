@@ -57,6 +57,68 @@ func testModelByChannel(ctx context.Context, req TestModelRequest) (*TestModelRe
 	return doTestModel(ctx, channel, req.Model, req.Prompt)
 }
 
+type TestChannelRequest struct {
+	ChannelID int    `json:"channel_id" binding:"required"`
+	Prompt    string `json:"prompt"`
+}
+
+type ModelTestResult struct {
+	Model     string      `json:"model"`
+	Success   bool        `json:"success"`
+	Response  string      `json:"response,omitempty"`
+	LatencyMs int64       `json:"latency_ms"`
+	Usage     *ModelUsage `json:"usage,omitempty"`
+	Error     string      `json:"error,omitempty"`
+}
+
+type TestChannelResponse struct {
+	Results []ModelTestResult `json:"results"`
+}
+
+func TestChannel(ctx context.Context, req TestChannelRequest) (*TestChannelResponse, error) {
+	channel, err := op.ChannelGet(req.ChannelID, ctx)
+	if err != nil {
+		return &TestChannelResponse{
+			Results: []ModelTestResult{{
+				Success: false,
+				Error:   fmt.Sprintf("channel not found: %v", err),
+			}},
+		}, nil
+	}
+
+	prompt := req.Prompt
+	if prompt == "" {
+		prompt = "Hello!"
+	}
+
+	models := strings.Split(channel.Model, ",")
+	results := make([]ModelTestResult, 0, len(models))
+	for _, m := range models {
+		m = strings.TrimSpace(m)
+		if m == "" {
+			continue
+		}
+		resp, err := doTestModel(ctx, channel, m, prompt)
+		if err != nil {
+			results = append(results, ModelTestResult{
+				Model: m,
+				Error: err.Error(),
+			})
+			continue
+		}
+		results = append(results, ModelTestResult{
+			Model:     resp.Model,
+			Success:   resp.Success,
+			Response:  resp.Response,
+			LatencyMs: resp.LatencyMs,
+			Usage:     resp.Usage,
+			Error:     resp.Error,
+		})
+	}
+
+	return &TestChannelResponse{Results: results}, nil
+}
+
 func testModelByGroup(ctx context.Context, req TestModelRequest) (*TestModelResponse, error) {
 	group, err := op.GroupGetEnabledMap(req.Model, ctx)
 	if err != nil {
