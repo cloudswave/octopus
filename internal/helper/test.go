@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/bestruirui/octopus/internal/model"
 	"github.com/bestruirui/octopus/internal/op"
-	"github.com/looplj/axonhub/llm/transformer"
 )
 
 type TestModelRequest struct {
@@ -110,10 +110,7 @@ func doTestModel(ctx context.Context, channel *model.Channel, modelName string, 
 		}, nil
 	}
 
-	apiURL := transformer.NormalizeBaseURL(baseURL, "v1") + "/chat/completions"
-	if channel.Type == model.ChannelTypeDoubao {
-		apiURL = transformer.NormalizeBaseURL(baseURL, "v3") + "/chat/completions"
-	}
+	apiURL := strings.TrimRight(baseURL, "/") + "/chat/completions"
 
 	requestBody := map[string]any{
 		"model": modelName,
