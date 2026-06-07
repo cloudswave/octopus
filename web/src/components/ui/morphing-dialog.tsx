@@ -235,7 +235,7 @@ function MorphingDialogContent({
       if (openPopoverContent) {
         return true;
       }
-      if (target?.closest('[data-radix-dialog-content]') || target?.closest('[data-radix-dialog-overlay]')) {
+      if (target?.closest('[data-slot="dialog-content"]') || target?.closest('[data-slot="dialog-overlay"]')) {
         return true;
       }
       return false;
