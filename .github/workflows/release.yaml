@@ -47,11 +47,60 @@ jobs:
       - name: Build
         run: bash scripts/build.sh release
 
-      - name: Upload Artifacts
+      - name: Upload linux-x86_64
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ github.sha }}
-          path: build/archives/*
+          name: octopus-linux-x86_64
+          path: build/archives/octopus-linux-x86_64.zip
+          retention-days: 30
+
+      - name: Upload linux-arm64
+        uses: actions/upload-artifact@v4
+        with:
+          name: octopus-linux-arm64
+          path: build/archives/octopus-linux-arm64.zip
+          retention-days: 30
+
+      - name: Upload linux-armv7
+        uses: actions/upload-artifact@v4
+        with:
+          name: octopus-linux-armv7
+          path: build/archives/octopus-linux-armv7.zip
+          retention-days: 30
+
+      - name: Upload linux-x86
+        uses: actions/upload-artifact@v4
+        with:
+          name: octopus-linux-x86
+          path: build/archives/octopus-linux-x86.zip
+          retention-days: 30
+
+      - name: Upload windows-x86_64
+        uses: actions/upload-artifact@v4
+        with:
+          name: octopus-windows-x86_64
+          path: build/archives/octopus-windows-x86_64.zip
+          retention-days: 30
+
+      - name: Upload windows-x86
+        uses: actions/upload-artifact@v4
+        with:
+          name: octopus-windows-x86
+          path: build/archives/octopus-windows-x86.zip
+          retention-days: 30
+
+      - name: Upload darwin-arm64
+        uses: actions/upload-artifact@v4
+        with:
+          name: octopus-darwin-arm64
+          path: build/archives/octopus-darwin-arm64.zip
+          retention-days: 30
+
+      - name: Upload darwin-x86_64
+        uses: actions/upload-artifact@v4
+        with:
+          name: octopus-darwin-x86_64
+          path: build/archives/octopus-darwin-x86_64.zip
           retention-days: 30
 
       - name: Get latest tag
