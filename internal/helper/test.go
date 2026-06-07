@@ -138,7 +138,11 @@ func doTestModel(ctx context.Context, channel *model.Channel, modelName string, 
 
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Bearer "+usedKey.ChannelKey)
-	applyCustomHeaders(httpReq, *channel)
+	for _, header := range channel.CustomHeader {
+		if header.HeaderKey != "" {
+			httpReq.Header.Set(header.HeaderKey, header.HeaderValue)
+		}
+	}
 
 	httpClient, err := ChannelHttpClient(channel)
 	if err != nil {
