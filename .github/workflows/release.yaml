@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+    tags:
+      - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -46,12 +49,14 @@ jobs:
         run: bash scripts/build.sh release
 
       - name: Get latest tag
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         id: tag
         run: |
           LATEST_TAG=$(git describe --tags --abbrev=0)
           echo "TAG_NAME=$LATEST_TAG" >> $GITHUB_OUTPUT
 
       - name: Upload Release
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         uses: softprops/action-gh-release@v2
         with:
           files: build/archives/*
@@ -59,6 +64,7 @@ jobs:
           tag_name: ${{ steps.tag.outputs.TAG_NAME }}
 
       - name: Docker meta (Debian)
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         id: meta-debian
         uses: docker/metadata-action@v5
         with:
@@ -70,6 +76,7 @@ jobs:
             type=raw,value=${{ steps.tag.outputs.TAG_NAME }}
 
       - name: Docker meta (Alpine)
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         id: meta-alpine
         uses: docker/metadata-action@v5
         with:
@@ -81,12 +88,15 @@ jobs:
             type=raw,value=${{ steps.tag.outputs.TAG_NAME }}-alpine
 
       - name: Set up QEMU
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GitHub Container Registry
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -94,12 +104,14 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login to Docker Hub
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push (Alpine)
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -112,6 +124,7 @@ jobs:
             TARGETPLATFORM
 
       - name: Build and push (Debian)
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         uses: docker/build-push-action@v5
         with:
           context: .
